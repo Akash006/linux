@@ -1,6 +1,6 @@
 # Linux Practical Examination — Instructor Answer Key
 
-**Exam code:** LNX-PRAC-01 · **Platform:** CentOS Stream 10 · **Total:** 100 marks · **Pass:** 70
+**Platform:** CentOS Stream 10 · **Total:** 100 marks · **Pass:** 80
 
 > For instructor use only. Every command below is what `exam_check.sh` expects to see the
 > *effect* of — alternative commands that produce the same end state also score full marks.
@@ -25,7 +25,7 @@ id alice; id bob; id carol
 getent passwd carol
 ```
 
-**Marks:** GID 5000 (2) · alice+bob with `/bin/bash` (2) · both in `sysadmins` (1) · carol UID 3005 + nologin (1) · GECOS `Service Account` (1)
+**Marks:** GID 5000 (2) · alice+bob with `/bin/bash` (2) · both in `sysadmins` (1) · carol UID 3005 + nologin (1) · comment field `Service Account` (1)
 
 **Common errors:** using `-g sysadmins` (makes it the *primary* group, wiping the private group) instead of `-G`; forgetting to quote `"Service Account"`.
 
@@ -307,8 +307,8 @@ mkfs.ext4 -L EXAMDATA ${EXAM_DISK1}1
 
 mkdir -p /mnt/examdata
 blkid ${EXAM_DISK1}1                     # note the UUID
-echo 'UUID=<uuid-here> /mnt/examdata ext4 defaults,nofail 0 0' >> /etc/fstab
-# equally valid: LABEL=EXAMDATA /mnt/examdata ext4 defaults,nofail 0 0
+echo 'UUID=<uuid-here> /mnt/examdata ext4 defaults 0 0' >> /etc/fstab
+# equally valid: LABEL=EXAMDATA /mnt/examdata ext4 defaults 0 0
 
 systemctl daemon-reload
 mount -a
@@ -318,7 +318,7 @@ mount -a
 
 **Marks:** mounted (2) · ext4 (2) · label EXAMDATA (1) · ~500 MiB, 400–560 accepted (1) · fstab entry (2)
 
-**Common errors:** forgetting `partprobe`, so the kernel never sees the partition; labelling with `e2label` is fine but must actually be run; omitting `nofail`; mounting by device name is accepted by the grader, but UUID/LABEL is the professional answer.
+**Common errors:** forgetting `partprobe`, so the kernel never sees the partition; labelling with `e2label` is fine but must actually be run; mounting by device name is accepted by the grader, but UUID/LABEL is the professional answer.
 
 ---
 
@@ -335,7 +335,7 @@ lvcreate -L 512M -n lvdata vgexam
 mkfs.xfs /dev/vgexam/lvdata
 
 mkdir -p /mnt/lvdata
-echo '/dev/vgexam/lvdata /mnt/lvdata xfs defaults,nofail 0 0' >> /etc/fstab
+echo '/dev/vgexam/lvdata /mnt/lvdata xfs defaults 0 0' >> /etc/fstab
 systemctl daemon-reload
 mount -a
 
@@ -404,7 +404,7 @@ echo exam-node1.example.com > /opt/reports/hostname.txt
 | 8 | Permission audit | 5 | 17 | cron | 3 |
 | 9 | Log analysis | 9 | 18 | Hostname | 3 |
 
-**Total 100 · Pass mark 70**
+**Total 100 · Pass mark 80**
 
 ---
 

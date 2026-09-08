@@ -11,7 +11,7 @@ EXAM_HOME="/etc/exam"
 ENV_FILE="${EXAM_HOME}/exam.env"
 EXPECTED="${EXAM_HOME}/expected"
 DATA="/exam-data"
-PASS_PERCENT=70
+PASS_PERCENT=80
 
 CANDIDATE="${1:-candidate}"
 REPORT="/root/exam-result-${CANDIDATE}-$(date +%Y%m%d-%H%M).txt"
@@ -204,7 +204,7 @@ check "alice and bob are members of sysadmins" 1 \
       "user_in_group alice sysadmins && user_in_group bob sysadmins"
 check "carol has UID 3005 and a nologin shell" 1 \
       "[ \"\$(id -u carol)\" = 3005 ] && field_passwd carol 7 | grep -qE '^/(usr/)?sbin/nologin$'"
-check "carol GECOS comment is 'Service Account'" 1 \
+check "carol comment field is 'Service Account'" 1 \
       "field_passwd carol 5 | grep -qx 'Service Account'"
 
 #------------------------------------------------------------------------------

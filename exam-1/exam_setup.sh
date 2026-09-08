@@ -6,8 +6,8 @@
 #
 #  BEFORE running this script, attach two spare virtual disks to the VirtualBox VM:
 #      VirtualBox -> VM Settings -> Storage -> Controller SATA -> Add Hard Disk
-#      Disk 1: 2 GB   (used for Question 15 - partition + ext4)
-#      Disk 2: 3 GB   (used for Question 16 - LVM, grows to 1 GiB)
+#      Disk 1: 3 GB   (used for Question 15 - partition + ext4)
+#      Disk 2: 5 GB   (used for Question 16 - LVM, grows to 1 GiB)
 #  They normally appear as /dev/sdb and /dev/sdc. The script detects them
 #  automatically; if none are found it falls back to loop-backed image files.
 #
@@ -322,8 +322,8 @@ if [ "$DISK_MODE" = "loop" ]; then
         [ -z "$ld" ] && ld=$(losetup -P -f --show "$img" 2>/dev/null)
         echo "$ld"
     }
-    DISK1=$(attach_disk "${DISK_DIR}/disk1.img" 2G)
-    DISK2=$(attach_disk "${DISK_DIR}/disk2.img" 3G)
+    DISK1=$(attach_disk "${DISK_DIR}/disk1.img" 3G)
+    DISK2=$(attach_disk "${DISK_DIR}/disk2.img" 5G)
 
     # Re-attach the loop disks automatically on boot
     cat > /etc/systemd/system/exam-disks.service <<EOF

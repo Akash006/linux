@@ -1,10 +1,66 @@
 # Linux System Administration — Practical Examination
 
-**Exam code:** LNX-PRAC-01
 **Platform:** CentOS Stream 10 (VirtualBox VM)
 **Duration:** 2 hours 30 minutes
 **Total marks:** 100
-**Passing score:** 70
+**Passing score:** 80
+
+---
+
+## Pre-exam setup (manual prerequisites — complete before the candidate starts)
+
+These steps must be done by the invigilator on the exam VM **before** running `exam_setup.sh`.
+
+### 1. Attach two spare virtual disks (3 GB and 5 GB)
+
+The storage questions (15 and 16) require two blank virtual disks attached to the VM. Attach them in VirtualBox as follows:
+
+1. Shut down the VM (VirtualBox can also hot-add disks to a running VM if the controller supports it, but doing this with the VM powered off is safest).
+2. Open **VirtualBox Manager** → select the exam VM → **Settings** → **Storage**.
+3. Under the **SATA** (or **SCSI**) controller, click the **Add Hard Disk** icon (the small disk-with-plus icon).
+4. Click **Create** to make a new virtual disk:
+   - Choose **VDI** (or your preferred format), **Dynamically allocated**.
+   - Set the size to **3 GB**. Give it a recognizable name, e.g. `exam-disk1`.
+   - Click **Create** to attach it.
+5. Repeat steps 3–4 to add a **second** disk of **5 GB**, e.g. `exam-disk2`.
+6. Click **OK** to close Settings, then start the VM.
+7. Inside the VM, confirm both disks are visible with `lsblk` — they typically appear as `/dev/sdb` (3 GB) and `/dev/sdc` (5 GB). `exam_setup.sh` auto-detects them.
+
+### 2. Take a snapshot before running the exam setup
+
+Take a clean snapshot so the VM can be restored to a pristine state for the next candidate.
+
+1. In **VirtualBox Manager**, select the exam VM.
+2. Go to **Machine** → **Take Snapshot** (or click the **Snapshots** icon in the toolbar, then **Take**).
+3. Give it a clear name, e.g. `pre-exam-clean` or `before-exam-setup`, and click **OK**.
+4. Confirm the snapshot appears under the **Snapshots** pane before continuing.
+
+If anything goes wrong during setup or grading, restore this snapshot (**Snapshots** → right-click the snapshot → **Restore**) and start again.
+
+### 3. Set up the exam environment
+
+Once the disks are attached and the snapshot is taken, start the VM and run, as root:
+
+```bash
+cd /path/to/exam-1
+./exam_setup.sh
+```
+
+- The script installs required packages, prepares `/exam-data`, creates the pre-existing accounts (`dev01`) and the rogue service, detects the two spare disks, and records everything in `/etc/exam/exam.env`.
+- To reuse the same VM for another candidate, reset first: `./exam_setup.sh --reset --yes`.
+- When setup finishes, hand the candidate `exam_questions.md` and start the clock.
+
+### 4. Check the result after the exam
+
+When the candidate has finished (or time is up), run, as root:
+
+```bash
+./exam_check.sh <candidate-name>
+```
+
+- The script inspects the system, prints a pass/fail breakdown per question, and waits ~25 seconds to confirm Question 13's log file is growing.
+- A transcript is saved to `/root/exam-result-<candidate-name>-<date>.txt`.
+- A reboot before grading is a fair sanity check of the "must survive a reboot" rule.
 
 ---
 
@@ -20,11 +76,10 @@
    lsblk
    ```
    Use `$EXAM_DISK1` only for Question 15 and `$EXAM_DISK2` only for Question 16. Do **not** touch the disk that holds the running system.
-5. Any file system you add to `/etc/fstab` **must include the `nofail` mount option** — the exam disks are removable, and a missing `nofail` can leave the machine unbootable.
-6. Do **not** modify or delete anything under `/etc/exam/` and do not edit the source data under `/exam-data/` unless a question tells you to. Tampering is detected and scores zero for the affected question.
-7. This system is CentOS Stream 10: use `dnf` for package management (`yum` still works as a compatibility link).
-8. `man`, `--help` and the documentation in `/usr/share/doc` are allowed. The internet is not.
-9. Exact names, paths, permissions and spellings matter. Read each question twice.
+5. Do **not** modify or delete anything under `/etc/exam/` and do not edit the source data under `/exam-data/` unless a question tells you to. Tampering is detected and scores zero for the affected question.
+6. This system is CentOS Stream 10: use `dnf` for package management (`yum` still works as a compatibility link).
+7. `man`, `--help` and the documentation in `/usr/share/doc` are allowed. The internet is not.
+8. Exact names, paths, permissions and spellings matter. Read each question twice.
 
 ---
 
@@ -40,7 +95,7 @@
 3. Create a third user `carol` with:
    - UID **3005**,
    - login shell `/sbin/nologin` (no interactive access),
-   - the comment (GECOS) field set exactly to `Service Account`.
+   - the comment field set exactly to `Service Account`.
 
 ### Question 2 — Password ageing and account locking (5 marks)
 
@@ -155,14 +210,13 @@ On **`$EXAM_DISK1`** only:
 1. Create a single partition of approximately **500 MiB**.
 2. Format it with the **ext4** file system and give it the label **`EXAMDATA`**.
 3. Mount it **permanently** on `/mnt/examdata`, so that it is mounted automatically at boot.
-   Remember the `nofail` option (see instruction 5).
 
 ### Question 16 — LVM (10 marks)
 
 On **`$EXAM_DISK2`** only:
 
 1. Prepare the disk for LVM and create a volume group named **`vgexam`**.
-2. Create a logical volume named **`lvdata`** of **512 MiB**, format it with **xfs** and mount it permanently on `/mnt/lvdata` (with `nofail`).
+2. Create a logical volume named **`lvdata`** of **512 MiB**, format it with **xfs** and mount it permanently on `/mnt/lvdata`.
 3. The application then needs more space: **extend `lvdata` to 1 GiB and grow its file system** so that the extra space is usable on `/mnt/lvdata`, **without unmounting it and without losing data**.
 
 ---
@@ -179,29 +233,5 @@ Schedule a job for the user `alice` (not root) that runs **every 5 minutes** and
 2. Write that hostname — and nothing else — into `/opt/reports/hostname.txt`.
 
 ---
-
-## Marks summary
-
-| Question | Topic | Marks |
-|---|---|---|
-| 1 | Users and groups | 7 |
-| 2 | Password ageing and locking | 5 |
-| 3 | sudo privileges | 5 |
-| 4 | Ownership and permissions | 5 |
-| 5 | ACLs | 6 |
-| 6 | umask | 4 |
-| 7 | find + copy preserving attributes | 5 |
-| 8 | Permission audit and cleanup | 5 |
-| 9 | Log analysis (grep / sort / uniq / head / tail) | 9 |
-| 10 | Hard and soft links | 4 |
-| 11 | tar archive | 4 |
-| 12 | Stopping a rogue service | 5 |
-| 13 | Custom systemd service | 8 |
-| 14 | Package management (dnf install / remove) | 4 |
-| 15 | Partition + file system + fstab | 8 |
-| 16 | LVM create and extend | 10 |
-| 17 | cron | 3 |
-| 18 | Hostname | 3 |
-| **Total** | | **100** |
 
 **Good luck.**

@@ -39,10 +39,17 @@ If anything goes wrong during setup or grading, restore this snapshot (**Snapsho
 
 ### 3. Set up the exam environment
 
-Once the disks are attached and the snapshot is taken, start the VM and run, as root:
+Once the disks are attached and the snapshot is taken, start the VM and switch to `root`:
+
+```bash
+sudo -i
+```
+
+Then, from the `exam-1` directory, make all the exam scripts executable and run the setup script:
 
 ```bash
 cd /path/to/exam-1
+chmod +x *.sh
 ./exam_setup.sh
 ```
 

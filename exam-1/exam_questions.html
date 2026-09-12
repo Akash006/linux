@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Linux System Administration — Practical Examination</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 32px 24px 48px;
+      background: #f7f8fa;
+      color: #1f2937;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 32px 40px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    h1, h2, h3, h4 {
+      color: #111827;
+      margin-top: 1.4em;
+      margin-bottom: 0.5em;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 2.1rem;
+      border-bottom: 2px solid #dbeafe;
+      padding-bottom: 0.3em;
+    }
+    h2 {
+      font-size: 1.6rem;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 0.2em;
+    }
+    h3 {
+      font-size: 1.2rem;
+    }
+    p, li {
+      font-size: 1rem;
+    }
+    strong {
+      color: #111827;
+    }
+    code, pre {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      background: #f3f4f6;
+      border-radius: 6px;
+    }
+    code {
+      padding: 2px 6px;
+      font-size: 0.95em;
+    }
+    pre {
+      padding: 16px;
+      overflow-x: auto;
+      border: 1px solid #e5e7eb;
+      margin: 1em 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    ul, ol {
+      padding-left: 1.6em;
+    }
+    hr {
+      border: 0;
+      border-top: 1px solid #e5e7eb;
+      margin: 1.5em 0;
+    }
+    .meta {
+      margin-bottom: 0.5em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Linux System Administration — Practical Examination</h1>
+
+    <p class="meta"><strong>Platform:</strong> CentOS Stream 10 (VirtualBox VM)</p>
+    <p class="meta"><strong>Duration:</strong> 2 hours 30 minutes</p>
+    <p class="meta"><strong>Total marks:</strong> 100</p>
+    <p class="meta"><strong>Passing score:</strong> 80</p>
+
+    <hr />
+
+    <h2>Pre-exam setup (manual prerequisites — complete before the candidate starts)</h2>
+
+    <p>These steps must be done by the invigilator on the exam VM <strong>before</strong> running <code>exam_setup.sh</code>.</p>
+
+    <h3>1. Attach two spare virtual disks (3 GB and 5 GB)</h3>
+
+    <p>The storage questions (15 and 16) require two blank virtual disks attached to the VM. Attach them in VirtualBox as follows:</p>
+
+    <ol>
+      <li>Shut down the VM (VirtualBox can also hot-add disks to a running VM if the controller supports it, but doing this with the VM powered off is safest).</li>
+      <li>Open <strong>VirtualBox Manager</strong> → select the exam VM → <strong>Settings</strong> → <strong>Storage</strong>.</li>
+      <li>Under the <strong>SATA</strong> (or <strong>SCSI</strong>) controller, click the <strong>Add Hard Disk</strong> icon (the small disk-with-plus icon).</li>
+      <li>Click <strong>Create</strong> to make a new virtual disk:
+        <ul>
+          <li>Choose <strong>VDI</strong> (or your preferred format), <strong>Dynamically allocated</strong>.</li>
+          <li>Set the size to <strong>3 GB</strong>. Give it a recognizable name, e.g. <code>exam-disk1</code>.</li>
+          <li>Click <strong>Create</strong> to attach it.</li>
+        </ul>
+      </li>
+      <li>Repeat steps 3–4 to add a <strong>second</strong> disk of <strong>5 GB</strong>, e.g. <code>exam-disk2</code>.</li>
+      <li>Click <strong>OK</strong> to close Settings, then start the VM.</li>
+      <li>Inside the VM, confirm both disks are visible with <code>lsblk</code> — they typically appear as <code>/dev/sdb</code> (3 GB) and <code>/dev/sdc</code> (5 GB). <code>exam_setup.sh</code> auto-detects them.</li>
+    </ol>
+
+    <h3>2. Take a snapshot before running the exam setup</h3>
+
+    <p>Take a clean snapshot so the VM can be restored to a pristine state for the next candidate.</p>
+
+    <ol>
+      <li>In <strong>VirtualBox Manager</strong>, select the exam VM.</li>
+      <li>Go to <strong>Machine</strong> → <strong>Take Snapshot</strong> (or click the <strong>Snapshots</strong> icon in the toolbar, then <strong>Take</strong>).</li>
+      <li>Give it a clear name, e.g. <code>pre-exam-clean</code> or <code>before-exam-setup</code>, and click <strong>OK</strong>.</li>
+      <li>Confirm the snapshot appears under the <strong>Snapshots</strong> pane before continuing.</li>
+    </ol>
+
+    <p>If anything goes wrong during setup or grading, restore this snapshot (<strong>Snapshots</strong> → right-click the snapshot → <strong>Restore</strong>) and start again.</p>
+
+    <h3>3. Set up the exam environment</h3>
+
+    <p>Once the disks are attached and the snapshot is taken, start the VM and switch to <code>root</code>:</p>
+
+    <pre><code>sudo -i</code></pre>
+
+    <p>Then, from the <code>exam-1</code> directory, make all the exam scripts executable and run the setup script:</p>
+
+    <pre><code>cd /path/to/exam-1
+chmod +x *.sh
+./exam_setup.sh</code></pre>
+
+    <ul>
+      <li>The script installs required packages, prepares <code>/exam-data</code>, creates the pre-existing accounts (<code>dev01</code>) and the rogue service, detects the two spare disks, and records everything in <code>/etc/exam/exam.env</code>.</li>
+      <li>To reuse the same VM for another candidate, reset first: <code>./exam_setup.sh --reset --yes</code>.</li>
+      <li>When setup finishes, hand the candidate <code>exam_questions.md</code> and start the clock.</li>
+    </ul>
+
+    <h3>4. Check the result after the exam</h3>
+
+    <p>When the candidate has finished (or time is up), run, as root:</p>
+
+    <pre><code>./exam_check.sh &lt;candidate-name&gt;</code></pre>
+
+    <ul>
+      <li>The script inspects the system, prints a pass/fail breakdown per question, and waits ~25 seconds to confirm Question 13's log file is growing.</li>
+      <li>A transcript is saved to <code>/root/exam-result-&lt;candidate-name&gt;-&lt;date&gt;.txt</code>.</li>
+      <li>A reboot before grading is a fair sanity check of the “must survive a reboot” rule.</li>
+    </ul>
+
+    <hr />
+
+    <h2>Instructions — read before you start</h2>
+
+    <ol>
+      <li>This is a <strong>100% practical exam</strong>. Nothing has to be written on paper: your work is the state you leave the system in. An automated script inspects the server afterwards and awards marks.</li>
+      <li>Perform all tasks on the exam server as <code>root</code> (or with <code>sudo</code>).</li>
+      <li><strong>Everything must survive a reboot.</strong> Mounts, services, hostname and cron jobs will be checked on a running system; if a change only exists in memory, it earns no marks.</li>
+      <li>Two spare virtual disks have been attached to this VM for the storage tasks. Their device names (typically <code>/dev/sdb</code> and <code>/dev/sdc</code>) are recorded in <code>/etc/exam/exam.env</code>:
+        <pre><code>source /etc/exam/exam.env
+echo $EXAM_DISK1 $EXAM_DISK2
+lsblk</code></pre>
+        Use <code>$EXAM_DISK1</code> only for Question 15 and <code>$EXAM_DISK2</code> only for Question 16. Do <strong>not</strong> touch the disk that holds the running system.
+      </li>
+      <li>Do <strong>not</strong> modify or delete anything under <code>/etc/exam/</code> and do not edit the source data under <code>/exam-data/</code> unless a question tells you to. Tampering is detected and scores zero for the affected question.</li>
+      <li>This system is CentOS Stream 10: use <code>dnf</code> for package management (<code>yum</code> still works as a compatibility link).</li>
+      <li><code>man</code>, <code>--help</code> and the documentation in <code>/usr/share/doc</code> are allowed. The internet is not.</li>
+      <li>Exact names, paths, permissions and spellings matter. Read each question twice.</li>
+    </ol>
+
+    <hr />
+
+    <h2>Section A — Users, Groups and Privileges (22 marks)</h2>
+
+    <h3>Question 1 — User and group management (7 marks)</h3>
+    <ol>
+      <li>Create a group named <code>sysadmins</code> with GID <strong>5000</strong>.</li>
+      <li>Create two users, <code>alice</code> and <code>bob</code>, each with:
+        <ul>
+          <li>a normal interactive shell (<code>/bin/bash</code>),</li>
+          <li>a home directory under <code>/home</code>,</li>
+          <li><code>sysadmins</code> as a <strong>secondary</strong> group.</li>
+        </ul>
+      </li>
+      <li>Create a third user <code>carol</code> with:
+        <ul>
+          <li>UID <strong>3005</strong>,</li>
+          <li>login shell <code>/sbin/nologin</code> (no interactive access),</li>
+          <li>the comment field set exactly to <code>Service Account</code>.</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h3>Question 2 — Password ageing and account locking (5 marks)</h3>
+    <ol>
+      <li>Configure the account <code>alice</code> so that her password:
+        <ul>
+          <li>must be changed at least every <strong>45</strong> days,</li>
+          <li>cannot be changed again for <strong>3</strong> days after a change,</li>
+          <li>warns her <strong>7</strong> days before it expires.</li>
+        </ul>
+      </li>
+      <li>The pre-existing account <code>dev01</code> has left the company. <strong>Lock</strong> the account so the password can no longer be used. Do not delete it.</li>
+    </ol>
+
+    <h3>Question 3 — Superuser access (5 marks)</h3>
+    <p>Grant every member of the <code>sysadmins</code> group the ability to run <strong>all commands</strong> with <code>sudo</code>, on <strong>all hosts</strong>, <strong>without being prompted for a password</strong>.</p>
+    <ul>
+      <li>The configuration must be added as a separate drop-in file named <code>/etc/sudoers.d/sysadmins</code> (do not edit <code>/etc/sudoers</code> directly).</li>
+      <li>The resulting configuration must pass a syntax check.</li>
+    </ul>
+
+    <h3>Question 4 — Ownership and permissions (5 marks)</h3>
+    <ol>
+      <li>Create the directory <code>/opt/projects/webapp</code>.</li>
+      <li>It must be owned by user <code>alice</code> and group <code>sysadmins</code>, with octal permission <strong>770</strong>.</li>
+      <li>Inside it, create a file named <code>notes.txt</code> owned by user <code>bob</code> and group <code>sysadmins</code>, with octal permission <strong>640</strong>.</li>
+    </ol>
+
+    <hr />
+
+    <h2>Section B — ACLs and Default Permissions (10 marks)</h2>
+
+    <h3>Question 5 — Access Control Lists (6 marks)</h3>
+    <p>On the directory <code>/opt/projects/webapp</code>, without changing its base ownership or its 770 mode:</p>
+    <ol>
+      <li>Give the user <code>bob</code> explicit <strong>read, write and execute</strong> access through an ACL entry.</li>
+      <li>Configure a <strong>default ACL</strong> so that every new file or directory created inside <code>/opt/projects/webapp</code> automatically grants the user <code>carol</code> <strong>read and execute</strong> access.</li>
+    </ol>
+
+    <h3>Question 6 — umask (4 marks)</h3>
+    <p>Configure user <code>alice</code> so that <strong>her</strong> default file-creation mask is <strong>0027</strong> every time she logs in. The change must apply to <code>alice</code> only — it must not alter the system-wide default for other users.</p>
+
+    <hr />
+
+    <h2>Section C — Finding, Copying and Processing Files (19 marks)</h2>
+
+    <h3>Question 7 — Locating and copying large files (5 marks)</h3>
+    <ol>
+      <li>Create the directory <code>/opt/reports/bigfiles</code>.</li>
+      <li>Find every <strong>regular file</strong> under <code>/exam-data</code> that is <strong>larger than 1 MiB</strong> and copy it into <code>/opt/reports/bigfiles</code>.</li>
+      <li>The copies must <strong>preserve the original permissions and timestamps</strong>.</li>
+    </ol>
+
+    <h3>Question 8 — Permission audit and cleanup (5 marks)</h3>
+    <ol>
+      <li>Find every regular file under <code>/exam-data</code> whose permissions are exactly <strong>0777</strong> and write their <strong>full paths</strong>, one per line in sorted order, into <code>/opt/reports/world-writable.txt</code>.</li>
+      <li>Delete every <strong>empty</strong> regular file under <code>/exam-data/tmpdir</code>. Files that contain data must be left untouched.</li>
+    </ol>
+
+    <h3>Question 9 — Log analysis (9 marks)</h3>
+    <p>All output files go in <code>/opt/reports</code>. Work from <code>/exam-data/logs/app.log</code> and <code>/exam-data/data/numbers.txt</code>.</p>
+    <ol>
+      <li><strong>(3 marks)</strong> Write the <strong>number of lines</strong> in <code>app.log</code> that contain the string <code>error</code>, ignoring case, into <code>/opt/reports/error-count.txt</code>. The file must contain the number only.</li>
+      <li><strong>(3 marks)</strong> Extract every <strong>IPv4 address</strong> that appears in <code>app.log</code>, remove duplicates, sort them, and write them one per line into <code>/opt/reports/ips.txt</code>.</li>
+      <li><strong>(3 marks)</strong> Write <strong>lines 10 to 20 inclusive</strong> of <code>numbers.txt</code> into <code>/opt/reports/lines10-20.txt</code>.</li>
+    </ol>
+
+    <hr />
+
+    <h2>Section D — Links and Archiving (8 marks)</h2>
+
+    <h3>Question 10 — Hard and soft links (4 marks)</h3>
+    <ol>
+      <li>Create a <strong>hard link</strong> at <code>/opt/reports/master.hard</code> pointing to <code>/exam-data/config/master.cfg</code>.</li>
+      <li>Create a <strong>symbolic link</strong> at <code>/opt/reports/master.soft</code> pointing to <code>/exam-data/config/master.cfg</code>.</li>
+    </ol>
+
+    <h3>Question 11 — Archiving (4 marks)</h3>
+    <p>Create a <strong>gzip-compressed tar archive</strong> at <code>/opt/backups/exam-data.tar.gz</code> containing the whole <code>/exam-data/config</code> directory and all files inside it.</p>
+
+    <hr />
+
+    <h2>Section E — Processes and Services (13 marks)</h2>
+
+    <h3>Question 12 — Terminate a rogue workload (5 marks)</h3>
+    <p>A runaway workload called <code>exam-rogue.service</code> is consuming resources on this server.</p>
+    <ol>
+      <li>Stop it so that no <code>exam-rogue.sh</code> process is running.</li>
+      <li>Make sure it will <strong>not</strong> start again after a reboot.</li>
+    </ol>
+
+    <h3>Question 13 — Create your own service (8 marks)</h3>
+    <p>Create a systemd service called <code>examlog.service</code> that behaves as follows:</p>
+    <ol>
+      <li>It runs the script <code>/usr/local/bin/examlog.sh</code>, which must be executable and must, <strong>every 10 seconds and forever</strong>, append a line containing the current date and time to <code>/var/log/examlog.log</code>.</li>
+      <li>The service must be <strong>started now</strong> and must be <strong>enabled to start automatically at boot</strong> under the <code>multi-user.target</code>.</li>
+      <li><code>/var/log/examlog.log</code> must be actively growing when the exam is graded.</li>
+    </ol>
+
+    <hr />
+
+    <h2>Section F — Software Management (4 marks)</h2>
+
+    <h3>Question 14 — Packages (4 marks)</h3>
+    <ol>
+      <li>Install the package <strong><code>tree</code></strong> from the configured repositories.</li>
+      <li>The package <strong><code>zsh</code></strong> is installed on this server but is no longer approved. <strong>Uninstall</strong> it.</li>
+    </ol>
+    <p>Use <code>dnf</code> for both tasks.</p>
+
+    <hr />
+
+    <h2>Section G — Storage (18 marks)</h2>
+
+    <h3>Question 15 — Partition, file system and persistent mount (8 marks)</h3>
+    <p>On <strong><code>$EXAM_DISK1</code></strong> only:</p>
+    <ol>
+      <li>Create a single partition of approximately <strong>500 MiB</strong>.</li>
+      <li>Format it with the <strong>ext4</strong> file system and give it the label <strong><code>EXAMDATA</code></strong>.</li>
+      <li>Mount it <strong>permanently</strong> on <code>/mnt/examdata</code>, so that it is mounted automatically at boot.</li>
+    </ol>
+
+    <h3>Question 16 — LVM (10 marks)</h3>
+    <p>On <strong><code>$EXAM_DISK2</code></strong> only:</p>
+    <ol>
+      <li>Prepare the disk for LVM and create a volume group named <strong><code>vgexam</code></strong>.</li>
+      <li>Create a logical volume named <strong><code>lvdata</code></strong> of <strong>512 MiB</strong>, format it with <strong>xfs</strong> and mount it permanently on <code>/mnt/lvdata</code>.</li>
+      <li>The application then needs more space: <strong>extend <code>lvdata</code> to 1 GiB and grow its file system</strong> so that the extra space is usable on <code>/mnt/lvdata</code>, <strong>without unmounting it and without losing data</strong>.</li>
+    </ol>
+
+    <hr />
+
+    <h2>Section H — Scheduling and Networking (6 marks)</h2>
+
+    <h3>Question 17 — Scheduled job (3 marks)</h3>
+    <p>Schedule a job for the user <code>alice</code> (not root) that runs <strong>every 5 minutes</strong> and appends the current date and time to <code>/home/alice/cron-report.txt</code>.</p>
+
+    <h3>Question 18 — Hostname (3 marks)</h3>
+    <ol>
+      <li>Set the system's static hostname permanently to <strong><code>exam-node1.example.com</code></strong>.</li>
+      <li>Write that hostname — and nothing else — into <code>/opt/reports/hostname.txt</code>.</li>
+    </ol>
+
+    <p><strong>Good luck.</strong></p>
+  </div>
+</body>
+</html>
